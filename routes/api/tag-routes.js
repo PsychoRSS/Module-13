@@ -4,9 +4,9 @@ const { Tag, Product, ProductTag } = require('../../models');
 // The `/api/tags` endpoint
 
 // Find all Tags
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const allTags = Tag.findAll();
+    const allTags = await Tag.findAll();
     res.status(200).json(allTags)
   }catch(err) {
     res.status(500).json(err);
@@ -30,12 +30,23 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  try{
-    const tagData = Tag.create(req.body);
-    res.status(200).json(tagData)
-  }catch(err) {
-    res.status(400).json(err)
-  }
+  Tag.create(req.body)
+  .then((tag) => {
+    if (req.body.tagIds.length) {
+      const TagIdArr = req.body.tagIds.map((tag_id) =>{
+        return{
+          tag_id: tag.id
+        }
+      })
+      return ProductTag.bulkCreate(TagIdArr);
+    }
+    res.status(200).json(tag)
+  })
+  .then((tagID) => res.status(200).json(tagID))
+  .catch((err) => {
+    console.log(err);
+    res.status(400).json(err);
+  })
 });
 
 router.put('/:id', (req, res) => {
